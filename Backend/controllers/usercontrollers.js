@@ -11,7 +11,7 @@ const generateToken = (payload) => {
 // SIGNUP
 const signup = async (req, res) => {
     try {
-        const { name, age, email, mobile, address, AdharNumber, password,role} = req.body;
+        const { name, age, email, mobile, address, AdharNumber, password, role } = req.body;
 
         const existingUser = await User.findOne({ email });
         if (existingUser) {
@@ -28,7 +28,7 @@ const signup = async (req, res) => {
             address,
             AdharNumber,
             password: hashPassword,
-            role
+            role: role === 'admin' ? 'admin' : 'voter' 
         });
 
         const savedUser = await newUser.save();
@@ -53,10 +53,11 @@ const signup = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Signup error:", err.message);
         res.status(500).json({ error: "Internal server error" });
     }
 };
+
 
 // LOGIN
 const login = async (req, res) => {
