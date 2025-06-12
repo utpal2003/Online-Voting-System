@@ -74,10 +74,12 @@ const Deletcandidate = async (req, res) => {
         const candidateId = req.params.candidateId;
 
         const response = await Candidate.findByIdAndDelete(candidateId);
-        
 
-        return res.status(200).json({response:
-           response, message:'candidate delet succesfully'});
+
+        return res.status(200).json({
+            response:
+                response, message: 'candidate delet succesfully'
+        });
     } catch (err) {
         console.log(err);
         res.status(500).json({ error: 'Internal error' });
@@ -86,4 +88,58 @@ const Deletcandidate = async (req, res) => {
 
 }
 
-module.exports = { Addcandidate, Updatecandidate,Deletcandidate };
+
+//  This routes are for doing vote and get all candidates of theri party named and total votes
+// Admin can't vote
+
+const getallcandidate = async(req,res)=>{
+    try{
+        const candidates = await Candidate.find().select('name party voteCount');
+        res.status(200).json({success:true,candidates})
+    }catch(err){
+        console.error(err);
+        res.status(500).json({error:'Internal server error'})
+    }
+}
+
+
+
+const doingvote = async (req, res) => {
+    const candidateId = req.params.candidateId;
+    const userId = req.user.id;
+    try {
+
+        const isAdmin = await checkadminrole(userId);
+        if (isAdmin) {
+            return res.status(403).json({ message: 'admins are not allowed to vote' });
+        }
+        const user = await User.findById(userId);
+        if (user.isvoted) {
+            return res.status(400).json({ message: "User is already voted" });
+        }
+
+        const candidate =await Candidate.findById(candidateId);
+        if(!candidate){
+            return res.status(404).json({message:"Candidate not found"});
+        }
+        // push vote to candidate
+        candidate.votes.push({user:userId});
+        candidate.voteCount +=1;
+        user.isvoted = true;
+        await candidate.save()
+        await user.save();
+        console.log(candidateId);
+        console.log(userId)
+
+        res.status(200).json({ message: 'Vote submitted succesfully' });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' })
+    }
+
+}
+
+
+
+module.exports = { Addcandidate, Updatecandidate, Deletcandidate,getallcandidate ,doingvote};
